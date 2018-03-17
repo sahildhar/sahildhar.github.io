@@ -1,0 +1,18 @@
+# Permalinks
+#
+# Use of `relative_permalinks` ensures post links from the index work properly.
+permalink:           pretty
+
+# Setup
+title:               Sahil Dhar
+tagline:             'Another Appsec Blog'
+description:          'My Appsec Ramblings'
+baseurl:             ''
+paginate:            2
+
+# About/contact
+author:
+  name:              Sahil Dhar
+  url:               https://twitter.com/0x401
+  email:             sahildhar93@gmail.com
+
