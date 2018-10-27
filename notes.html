@@ -1,0 +1,14 @@
+---
+layout: page
+permalink: notes
+---
+
+<div class="home">
+  <ul class="posts">
+    {% for post in site.posts %}
+    {% if post.tag == "notes" %}
+        {{ post.content }}
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>
