@@ -35,6 +35,13 @@
  */
 
 /* Prevent scroll on narrow devices */
+
+.center-image
+{
+    margin: 0 auto;
+    display: block;
+}
+
 html,
 body {
   overflow-x: hidden;
