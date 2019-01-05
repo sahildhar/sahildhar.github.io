@@ -7,16 +7,16 @@ permalink: blogpost/:title/
 
 # Setup
 title: 'Sahil Dhar'
-tagline: 'Another Appsec Blog'
-description: 'My Appsec Ramblings'
+tagline: 'I write about Application Security and Research here :)'
+description: 'Application Security and Exploitation all day everyday. Offensive Security Certified Expert.'
 baseurl: ''
 paginate: 2
 
 # About/contact
 author:
-  name:              Sahil Dhar
-  url:               https://twitter.com/0x401
-  email:             sahildhar93@gmail.com
+  name:         Sahil Dhar
+  twitter:      https://twitter.com/0x401
+
 
 
 highlighter: rouge

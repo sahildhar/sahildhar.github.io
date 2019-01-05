@@ -1,9 +1,12 @@
 ---
 layout: post
 title: From XSS to Local File Read Bypassing Payload Length Restrictions
+excerpt_separator: <!--more-->
+
 ---
 
- In this post, we will discuss a stored XSS vulnerability found in one of the popular opensource medical records management software *OpenMRS 2.7.0*. The security research conducted for this software revealed many critical vulnerabilities ranging from Authenticated Remote Code Execution via Java Deserialization to Privilege Escalation and had been reported to vendor around 9 months back. 
+In this post, we will discuss a stored XSS vulnerability found in one of the popular opensource medical records management software *OpenMRS 2.7.0*. The security research conducted for this software revealed many critical vulnerabilities ranging from Authenticated Remote Code Execution via Java Deserialization to Privilege Escalation and had been reported to vendor around 9 months back. 
+<!--more-->
 
 We will have a look at how a user with `clerk` privileges can leverage Jquery to overcome length restrictions in a Stored XSS payload and can read local system files by exploiting one of the application features.
 

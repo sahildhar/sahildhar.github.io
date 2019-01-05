@@ -286,7 +286,8 @@ tbody tr:nth-child(odd) th {
  */
 
 .container {
-  max-width: 38rem;
+
+  min-width: 60%;
   padding-left:  1rem;
   padding-right: 1rem;
   margin-left:  auto;
@@ -350,6 +351,12 @@ tbody tr:nth-child(odd) th {
   margin-top: -.5rem;
   margin-bottom: 1rem;
   color: #9a9a9a;
+}
+
+.excerpt {
+  display: block;
+  margin-top: -1.2rem;
+  margin-bottom: 1rem;
 }
 
 /* Related posts */
