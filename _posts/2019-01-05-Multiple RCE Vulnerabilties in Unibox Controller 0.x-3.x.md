@@ -138,6 +138,138 @@ action=ping&pingIPAddress=127.0.0.1%0asudo /usr/local/unibox/scripts/exeCommand.
 
 [0]: http://wifi-soft.com/unibox-controller/
 
+### Root Cause Analysis
+
+Though the vulnerabilities discussed above are pretty straigh forward to exploit using Blackbox testing approach, but having a look at the code can open a whole new world of learning and developer mindset to us. 
+
+#### **CVE-2019-3495** - Unibox 0.x-2.x
+
+> network/mesh/edit-nds.php:57
+
+```php
+if ($_POST['sent'] && $_FILES['file']['name']) {
+
+  // Person was using advanced mode, and posted a file to us
+
+  $target_path = $dir . "data/uploads/" . $_COOKIE['user'] . "/" . basename($_FILES['file']['name']);
+  if (move_uploaded_file($_FILES['file']['tmp_name'], $target_path)) {
+    echo "<script>alert(\"Your file, " . basename($_FILES['file']['name']) . ", has been uploaded to:\\nhttp://" . $_SERVER['HTTP_HOST'] . str_replace("edit-nds.php", "", $_SERVER['REQUEST_URI']) . "data/uploads/" . $_COOKIE['user'] . "/" . basename($_FILES['file']['name']) . "\");</script>";
+  }
+  else {
+    echo "<script>alert(\"There was an error uploading your file, please try again later.\");</script>";
+  }
+}
+```
+By looking at the code, one can learn two things first a vulnerable file upload function, second developer's assumption that these files cannot accessed by web GUI (oh yea they are not accessible when following the data flow process in web GUI and a feature denied/ not accessible message is shown). 
+
+We can conclude the reason why they are allowing any file to be uploaded by looking at the comment `Person was using advanced mode, and posted a file to us` and realize that they are allowing some "advanced users" to upload any files. Well there are no Advanced users but hardcoded credentials which also does not validate Admin user's authentication.
+
+
+#### **CVE-2019-3496** - Unibox 3.x
+
+> tools/controller/diagnostic_tools_controller.php:45
+
+```php
+if($action == 'ping') {
+	#create object
+	$toolsObject = new DiagonosticTools();
+
+	#All validations
+	$tracerouteAddress = trim($_REQUEST['pingIPAddress']);
+	$errPingAddress = Utils::checkNotEmpty($tracerouteAddress, "IP Address/Domain Name");
+
+	if($errPingAddress == "") {
+		$errPingAddress = Utils::checkIPAddress($tracerouteAddress);
+		if($errPingAddress == "") {
+			$response = $toolsObject->testPing($tracerouteAddress);
+		}
+		else {
+			$errPingAddress = Utils::checkDomainName($tracerouteAddress);
+			if($errPingAddress == "") {
+				$response = $toolsObject->testPing($tracerouteAddress);			
+			}	
+			else {
+				$response['control']['status'] = -1;
+				$response['err']['errPingAddress'] = $errPingAddress;
+			}
+		}
+	}
+	else {
+		$response['control']['status'] = -1;
+		$response['err']['errPingAddress'] = $errPingAddress;
+	}
+}
+```
+By looking the code of `diagnostic_tools_controller` responsible for executing `ping` command, we can see that the developer assumes that `trim()` function will strip down the special characters listed in php's trim documentation. 
+
+![](/assets/images/unibox/4.png)
+
+Well, it does strip down the characters but that only from the begining and end of the string. 
+
+Actual Working:
+
+* `cmd = localhost%0aid` - will work
+* `cmd = "localhost;id` - will work 
+
+Developer Assumption:
+
+* `cmd = localhost%0atest` will return `localhosttest` - wrong 
+
+As the entire string which PHP see is `localhost%0atest` and not just `localhost` and thus any command concatenated to `$_REQUEST['pingIPAddress']` along with general bash seperators will work just fine, putting `trim()` to no use. The `$_REQUEST['pingIPAddress']` is then passed to `$toolsObject->testPing()` function of `DiagonosticTools` class. 
+
+> tools/model/diagnostic_tools_model.php:53
+
+```php
+
+public function testPing($pingAddress) {
+	$response = array();
+
+	shell_exec("/usr/bin/killall ping 2>>/dev/null >>/dev/null");
+	$result = shell_exec("/bin/ping -c 3 -W 3 $pingAddress 2>&1 &");`
+	if(strstr($result,'ping: unknown host')) {
+		$response['data']['pingOutput'] = $result;
+		$response['control']['status'] = 0;
+	}
+	else {
+		$response['data']['pingOutput'] = str_replace("\n", "<br>", $result);
+		$response['control']['status'] = 1;
+		Utils::eventLogs("log","Tools","Ping","ping requested, to url: $pingAddress");
+	}
+	return $response;
+}
+```
+ The code for `DiagonosticTools::testPing()` is pretty straighforward which simply concatenates the userinput `$_REQUEST['pingIPAddress']` to the `ping` command and executes via PHP's `shell_exec()` function, which also gives an advantages to the attacker to use shell features if required.
+
+#### **CVE-2019-3497** - Unibox 0.x - 2.x
+
+> tools/ping.php
+
+```php
+$pingCount = 3;
+$pingaction = $_REQUEST['pingaction'];
+$address = (trim($_REQUEST['address']));
+
+if ($_REQUEST['address']) {
+  shell_exec("/usr/bin/killall ping 2>>/dev/null >>/dev/null");
+  /* log event */
+  $logPingAddress = $_REQUEST['address'];
+  $eventSeverity = "log";
+  $eventMessage = "ping requested, to url: $logPingAddress";
+  logevent($eventSeverity, $eventMessage);
+  /* event logging complete */
+  $response = shell_exec("/bin/ping -c $pingCount -W 3 $address 2>&1 &");
+  if (strstr($response, 'ping: unknown host')) {
+    $response = "ping failed.";
+  }
+  else {
+    $response = str_replace("\n", "<br />", $response);
+  }
+} 
+```
+
+After looking at the code of Unibox 3.x and 2.x devices, one can realize that the origin of remote command injection vulnerability is from mistakes of the past, where developer didn't realize the actual use of PHP's `trim()` function and kept on using it even after doing the complete code revamp for Unibox 3.x devices.
+
+
 ### Vendor Response Timeline
 * **4/10/2018** - Sent inital email. - No response
 * **12/10/2018** - Sent an email, included CEO's, CTO's and any other support/marketting email address I can find to discuss about the vulnerability. - No response
