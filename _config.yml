@@ -8,7 +8,7 @@ permalink: blogpost/:title/
 # Setup
 title: 'Sahil Dhar'
 tagline: 'Application Security and Exploitation all day everyday.'
-description: 'This my personal research blog. Any content posted here, strictly does not represent the views/opinions of my current/past employer.'
+description: ''
 baseurl: ''
 paginate: 2
 
