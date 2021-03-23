@@ -1,0 +1,14 @@
+---
+layout: page
+permalink: frida_snippets
+---
+
+<div class="home">
+  <ul class="posts">
+    {% for post in site.posts %}
+    {% if post.tag == "frida_snippets" %}
+        {{ post.content }}
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>
