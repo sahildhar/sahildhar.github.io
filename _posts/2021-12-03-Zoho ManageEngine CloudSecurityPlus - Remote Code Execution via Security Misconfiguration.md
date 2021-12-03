@@ -6,7 +6,7 @@ excerpt_separator: <!--more-->
 
 ---
 
-Zoho ManageEngine CloudSecurityPlus before Build 4117 allows execution of arbitrary code by overwriting BCP file.  
+Zoho ManageEngine CloudSecurityPlus before Build 4117 allows execution of arbitrary code via security misconfiguration.  
 <!--more-->
 
 ### **Identifiers**
